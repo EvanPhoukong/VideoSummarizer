@@ -3,6 +3,7 @@ from pathlib import Path
 import nltk
 import string, re
 from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 class VideoSummarizer:
     """
@@ -29,10 +30,10 @@ class VideoSummarizer:
         # nltk.download('punkt_tab')
         # transcript = nltk.sent_tokenize(transcript)
 
-        with open('transcript.txt', 'w+', encoding='utf-8') as file:
-            # for line in transcript:
-            #     file.write(line + '\n')
-            file.write(transcript)
+        # with open('transcript.txt', 'w+', encoding='utf-8') as file:
+        #     for line in transcript:
+        #         file.write(line + '\n')
+        #     file.write(transcript)
 
         return transcript
 
@@ -47,18 +48,29 @@ class VideoSummarizer:
 
         #Remove punctuation
         transcript = transcript.translate(str.maketrans('', '', string.punctuation))
+        tokens = transcript.split()
 
         #Remove stopwords
         nltk.download('stopwords')
         STOPWORDS = set(stopwords.words('english'))
-        transcript = ' '.join([word for word in transcript.split() if word not in STOPWORDS])
+        tokens = [word for word in tokens if word not in STOPWORDS]
 
+        #Stem words
+        stemmer = PorterStemmer()
+        tokens = [stemmer.stem(word) for word in tokens]
+
+        #Lemmatize words
+        nltk.download('wordnet')
+        lemmatizer = WordNetLemmatizer()
+        tokens = [lemmatizer.lemmatize(word) for word in tokens]
+
+        transcript = ' '.join(tokens)
         print(transcript)
 
 
     def convert_text_to_embeddings(self):
         """
-        Covert the text into numerical vectors/embeddings that capture meaninng and context
+        Convert the text into numerical vectors/embeddings that capture meaninng and context
         """
 
     def summarize(self):
