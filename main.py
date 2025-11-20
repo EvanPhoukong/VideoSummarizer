@@ -1,6 +1,8 @@
 import whisper
 from pathlib import Path
 import nltk
+import string, re
+from nltk.corpus import stopwords
 
 class VideoSummarizer:
     """
@@ -14,6 +16,7 @@ class VideoSummarizer:
 
     def run(self) -> None:
         transcript = self.get_transcript()
+        self.text_preprocessing(transcript)
         
 
     def get_transcript(self) -> str:
@@ -26,7 +29,7 @@ class VideoSummarizer:
         # nltk.download('punkt_tab')
         # transcript = nltk.sent_tokenize(transcript)
 
-        with open('transcript.txt', 'w+') as file:
+        with open('transcript.txt', 'w+', encoding='utf-8') as file:
             # for line in transcript:
             #     file.write(line + '\n')
             file.write(transcript)
@@ -34,10 +37,24 @@ class VideoSummarizer:
         return transcript
 
 
-    def text_preprocessing(self):
+    def text_preprocessing(self, transcript: str):
         """
         Text is normalized using standard preprocessing procedure, incluidng stemming, lemmatization, POS, etc.
         """
+
+        #Lower case everything
+        transcript = transcript.lower()
+
+        #Remove punctuation
+        transcript = transcript.translate(str.maketrans('', '', string.punctuation))
+
+        #Remove stopwords
+        nltk.download('stopwords')
+        STOPWORDS = set(stopwords.words('english'))
+        transcript = ' '.join([word for word in transcript.split() if word not in STOPWORDS])
+
+        print(transcript)
+
 
     def convert_text_to_embeddings(self):
         """
