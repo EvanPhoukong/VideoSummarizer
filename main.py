@@ -4,6 +4,7 @@ import nltk
 import string, re
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
+from gensim.models import Word2Vec
 
 class VideoSummarizer:
     """
@@ -17,7 +18,8 @@ class VideoSummarizer:
 
     def run(self) -> None:
         transcript = self.get_transcript()
-        self.text_preprocessing(transcript)
+        tokens = self.text_preprocessing(transcript)
+        self.convert_text_to_embeddings(tokens)
         
 
     def get_transcript(self) -> str:
@@ -47,7 +49,7 @@ class VideoSummarizer:
         transcript = transcript.lower()
 
         #Remove punctuation
-        transcript = transcript.translate(str.maketrans('', '', string.punctuation))
+       # transcript = transcript.translate(str.maketrans('', '', string.punctuation))
         tokens = transcript.split()
 
         #Remove stopwords
@@ -65,13 +67,29 @@ class VideoSummarizer:
         tokens = [lemmatizer.lemmatize(word) for word in tokens]
 
         transcript = ' '.join(tokens)
+
+        #Tokenize the sentences
+        transcript = nltk.sent_tokenize(transcript)
+
+        #Remove punctuation from sentences
+        transcript = [sent.translate(str.maketrans('', '', string.punctuation)) for sent in transcript]
+
+        #Tokenize the sentences
+        tokens = [nltk.word_tokenize(sent) for sent in transcript]
+
         print(transcript)
+        print(tokens)
+
+        return tokens
 
 
-    def convert_text_to_embeddings(self):
+    def convert_text_to_embeddings(self, tokens):
         """
         Convert the text into numerical vectors/embeddings that capture meaninng and context
         """
+        model = Word2Vec(sentences=tokens, min_count=1)
+        vec = model.wv.key_to_index
+        print(vec)
 
     def summarize(self):
         """
