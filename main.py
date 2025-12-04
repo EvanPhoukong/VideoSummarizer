@@ -5,7 +5,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from gensim.models import Word2Vec
 from openai import OpenAI
-import os
+import os, sys
 from rouge_score import rouge_scorer
 from bert_score import score
 from summac.model_summac import SummaCConv
@@ -14,8 +14,9 @@ from tkinter import filedialog
 from tkinter import Tk
 
 #Specify paths for transcript and generated summary files
-transcript_file = 'transcript.txt'
-gen_sum = "generated.txt"
+file_path = os.path.dirname(os.path.realpath(__file__))
+transcript_file = os.path.join(file_path, 'transcript.txt')
+gen_sum = os.path.join(file_path, "generated.txt")
 
 #Store the reference summaries in a dictionary
 ref_sums = {}
