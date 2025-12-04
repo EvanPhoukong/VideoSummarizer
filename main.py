@@ -23,7 +23,7 @@ def configure_API_key_instr() -> None:
     print('Add your OpenAI API Key to the system environment variables.')
     print('Generate a key here: https://platform.openai.com/api-keys')
     print('Directions to add API Key to System Environment: https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety')
-    print('A credit balance above $0 is REQUIRED. This model uses very little tokens (Average < $0.001 per run when summarizing one of the 3 preconfigured videos).')
+    print('A credit balance above $0 is REQUIRED. This model uses very little tokens (Average < $0.005 per run when summarizing one of the 3 preconfigured videos).')
     print('To view the price of GPT 5 Nano (the model being used), refer to this link: https://openai.com/api/pricing/')
 
 #Specify paths for transcript and generated summary files
@@ -211,7 +211,46 @@ class VideoSummarizer:
 
     def evaluation(self) -> None:
         """
-        Evaluate the performance of the model
+        Evaluate the performance of the model using BERTScore and SummaC
+        BERTScore measures precision, recall, and F1 scores
+        SummaC measures factual consistency and validity
+        """
+
+        #Reference summary for lecture video on binary logical shifts
+        ref_sums[0] = """
+        Binary logical shifts move bits left to rights. Gaps created by the shift at the beginning or end are filled with 0s.
+        For a left logical shift, we are multiplying the number by two each time we perform a shift. Due to size limits,
+        we can lose data if we shift out of allocated memory, also known as an overflow error. For a right logical shift, 
+        we are dividing by two each shift and lose the fractional part.
+        """
+
+        #Reference summary for lecture video on LANs and WANs
+        ref_sums[1] = """
+        LAN stands for local area network, and it exists over a small geographical area. 
+        All infrastructure, hardware and software, is usually owned by manager of network. 
+        WANs stand for wide area networks, and it exists over a larger geographical area, often multiple buildings. 
+        A WAN contains infrastructure owned by multiple people or organizations. In practice, 
+        a company with offices across different locations are connected through the wide area network. 
+        One example of a WAN is the internet, since its massive and involves a lot of shared infrastructure.
+        """
+
+        #Reference summary for lecture video on programming languages
+        ref_sums[2] = """
+        A programming language is a set of words, symbols, and syntax that are used to write instructions a 
+        computer can execute. There are two types of programming languages: High Level and Low Level programming 
+        languages. An example of high level includes Python, OCR, and JavaScript. An example of low level includes 
+        assembly or LMC, object code, and machine code. The CPU can only execute machine code and everything else 
+        has to be translated to that. Low level languages have a low level of abstraction and do not simplify much 
+        for the programmer. This can make them harder to program and maintain. They do allow a programmer to directly 
+        control the hardware, manipulate memory, specify addresses and CPU operations, etc. As a result, program can 
+        be made to run fast and take up little memory, which is important for simple systems like embedded systems. 
+        Low level languages are not portable, and they only work on the CPU they were designed for, since different 
+        machines have different machine codes. High level languages have a higher level of abstractions, with one 
+        line of code equating to multiple low-level lines. A programmer doesn't need to understand how the hardware 
+        works. More written English makes the more readable, and built-in subroutines make it quicker to program and 
+        maintain code. High level programs are less efficient, taking up more memory and running slower. They are 
+        portable, so they can run on any computer as long as a translate exists to convert it into the computer's 
+        machine code.
         """
 
         #Obtain the reference summary
@@ -269,43 +308,7 @@ def main() -> None:
         print('Select the video you would like to summarize: ')
         Tk().withdraw()
         video = filedialog.askopenfilename()
-
-    #Reference summaries
-    ref_sums[0] = """
-    Binary logical shifts move bits left to rights. Gaps created by the shift at the beginning or end are filled with 0s.
-    For a left logical shift, we are multiplying the number by two each time we perform a shift. Due to size limits,
-    we can lose data if we shift out of allocated memory, also known as an overflow error. For a right logical shift, 
-    we are dividing by two each shift and lose the fractional part.
-    """
-
-    ref_sums[1] = """
-    LAN stands for local area network, and it exists over a small geographical area. 
-    All infrastructure, hardware and software, is usually owned by manager of network. 
-    WANs stand for wide area networks, and it exists over a larger geographical area, often multiple buildings. 
-    A WAN contains infrastructure owned by multiple people or organizations. In practice, 
-    a company with offices across different locations are connected through the wide area network. 
-    One example of a WAN is the internet, since its massive and involves a lot of shared infrastructure.
-    """
-
-    ref_sums[2] = """
-    A programming language is a set of words, symbols, and syntax that are used to write instructions a 
-    computer can execute. There are two types of programming languages: High Level and Low Level programming 
-    languages. An example of high level includes Python, OCR, and JavaScript. An example of low level includes 
-    assembly or LMC, object code, and machine code. The CPU can only execute machine code and everything else 
-    has to be translated to that. Low level languages have a low level of abstraction and do not simplify much 
-    for the programmer. This can make them harder to program and maintain. They do allow a programmer to directly 
-    control the hardware, manipulate memory, specify addresses and CPU operations, etc. As a result, program can 
-    be made to run fast and take up little memory, which is important for simple systems like embedded systems. 
-    Low level languages are not portable, and they only work on the CPU they were designed for, since different 
-    machines have different machine codes. High level languages have a higher level of abstractions, with one 
-    line of code equating to multiple low-level lines. A programmer doesn't need to understand how the hardware 
-    works. More written English makes the more readable, and built-in subroutines make it quicker to program and 
-    maintain code. High level programs are less efficient, taking up more memory and running slower. They are 
-    portable, so they can run on any computer as long as a translate exists to convert it into the computer's 
-    machine code.
-    """
-
-    if selection != 3:
+    else:
         video = vids[selection]
 
     model = VideoSummarizer(video, selection)
