@@ -5,8 +5,7 @@ from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from gensim.models import Word2Vec
 from openai import OpenAI
-import os, sys
-from rouge_score import rouge_scorer
+import os
 from bert_score import score
 from summac.model_summac import SummaCConv
 from numpy import ndarray, float64
@@ -22,7 +21,7 @@ gen_sum = os.path.join(file_path, "generated.txt")
 ref_sums = {}
 
 #Store the video names in a dictionary
-vids = {0 : r"Binary Logical Shifts [C_MJ-UW1HkY].mp3", 
+vids = {0 : r"Binary_Logical_Shifts.mp3", 
         1: r"LANs_and_WANs.mp3",
         2: r"Types_of_PL.mp3"}
 
@@ -46,19 +45,24 @@ class VideoSummarizer:
         """
 
         #Step 1: Generate Transcript
+        print("Generating Transcript...")
         transcript = self.get_transcript()
 
         #Step 2: Preprocess transcript and covert it into tokens
+        print("Preprocessing Text...")
         tokens = self.text_preprocessing(transcript)
 
         #Step 3: Generate embeddings from tokens
+        print("Generating Embeddings...")
         embeddings = self.convert_text_to_embeddings(tokens)
 
         #Summarize the video using the transcript and embeddings
+        print("Generating Summary...")
         self.summarize(embeddings, transcript)
 
         #Evaluate the performance of the model using BERTScore and SummaC
         if self.selection != 3:
+            print("Evaluating model...")
             self.evaluation()
         
 
