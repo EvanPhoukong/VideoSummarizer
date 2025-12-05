@@ -11,7 +11,9 @@ from summac.model_summac import SummaCConv
 from numpy import ndarray, float64
 from tkinter import filedialog
 from tkinter import Tk
+from yt_dlp import YoutubeDL
 import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
@@ -19,12 +21,11 @@ def configure_API_key_instr() -> None:
     """
     Output instructions on how to configure OpenAI API Key
     """
-    print('\nSUMMARY COULD NOT BE GENERATED')
-    print('Add your OpenAI API Key to the system environment variables.')
+    print('\nNOTE: Add your OpenAI API Key to the system environment variables.')
     print('Generate a key here: https://platform.openai.com/api-keys')
     print('Directions to add API Key to System Environment: https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety')
     print('A credit balance above $0 is REQUIRED. This model uses very little tokens (Average < $0.005 per run when summarizing one of the 3 preconfigured videos).')
-    print('To view the price of GPT 5 Nano (the model being used), refer to this link: https://openai.com/api/pricing/')
+    print('To view the price of GPT 5 Nano (the model being used), refer to this link: https://openai.com/api/pricing/\n')
 
 #Specify paths for transcript and generated summary files
 file_path = os.path.dirname(os.path.realpath(__file__))
@@ -70,15 +71,37 @@ class VideoSummarizer:
         print("Generating Embeddings...")
         embeddings = self.convert_text_to_embeddings(tokens)
 
-        #Summarize the video using the transcript and embeddings
+        #Step 4: Summarize the video using the transcript and embeddings
         print("Generating Summary...")
         self.summarize(embeddings, transcript)
 
-        #Evaluate the performance of the model using BERTScore and SummaC
+        #step 5: Evaluate the performance of the model using BERTScore and SummaC
         if self.selection != 3:
             print("Evaluating model...")
             self.evaluation()
+
+
+    def generate_summary(self, prompt: str) -> str:
+        """
+        Query the OpenAI API and generate a summary
+        """
+
+        #Initialize OpenAI Client
+        client = OpenAI()
         
+        #Query the client and retrieve the response
+        try:
+            response = client.responses.create(
+                model="gpt-5-nano",
+                input=prompt
+            )
+        except: #API Key not configured properly
+            print('\nSUMMARY COULD NOT BE GENERATED')
+            configure_API_key_instr()
+            sys.exit()
+        
+        return response.output_text
+
 
     def get_transcript(self) -> str:
         """
@@ -189,31 +212,20 @@ class VideoSummarizer:
                 of supporting features, analysis methods, or summarization processes.
                 """
         
-        #Initialize OpenAI Client
-        client = OpenAI(api_key='FAKEKEY')
-        
-        #Query the client and retrieve the response
-        try:
-            response = client.responses.create(
-                model="gpt-5-nano",
-                input=prompt
-            )
-        except:
-            configure_API_key_instr()
-            sys.exit()
+        response = self.generate_summary(prompt)
 
-        print(response.output_text)
+        print('\n' + response)
 
         #Write generated summary to file
         with open(gen_sum, 'w+', encoding='utf-8', errors='ignore') as file:
-            file.write(response.output_text)
+            file.write(response)
 
 
     def evaluation(self) -> None:
         """
         Evaluate the performance of the model using BERTScore and SummaC
         BERTScore measures precision, recall, and F1 scores
-        SummaC measures factual consistency and validity
+        SummaC (Summary Consistency) measures factual consistency and validity
         """
 
         #Reference summary for lecture video on binary logical shifts
@@ -260,7 +272,20 @@ class VideoSummarizer:
         with open(gen_sum, 'r', encoding='utf-8', errors="ignore") as file:
             generated = file.read()
 
-        #Caclulate Bertscore - Precisionm, Recall, F1
+        #--------------------------------------------------------------------------------------------------
+        #NOTE: The below lines of code are a rough implementation of prompting the API to remov headers
+        #and formattings from the user's generated summary, since these negatively impact SummaC Scores.
+
+        # prompt = f"""Delete the title of the sumamry and any headers. Headers are almost always the first line of 
+        #             a new section, with sections being seperated by empty lines. Convert mathematical symbols/operations
+        #             into their English counterpart, such as + to plus.\n {generated}
+        #             """
+
+        # generated = self.generate_summary(prompt)
+        # print('\n' + generated)
+        #--------------------------------------------------------------------------------------------------
+
+        #Calculate BertScore - Precision, Recall, F1
         P, R, F1 = score([generated], [reference], lang="en", verbose=True)
 
         #Initialize summary consistency model
@@ -282,8 +307,7 @@ class VideoSummarizer:
         print(f"Precision: {P.mean().item() * 100: .2f}%")
         print(f"Recall: {R.mean().item() * 100: .2f}%")
         print(f"F1: {F1.mean().item() * 100: .2f}%\n")
-        print('SummaC')
-        print(f'Score: {score1 * 100: .2f}%')
+        print(f'SummaC Score: {score1 * 100: .2f}%')
 
 
 def main() -> None:
@@ -293,22 +317,69 @@ def main() -> None:
 
     #Select what video you would like to summarize
     selection = input("Please enter the number of the video you would like to analyze: [0] Bit shifts, [1] LANs and WANs, [2] Programming Languages.\n" \
-                            "If you would like to summarize you own video, please enter 3: ")
+                            "If you would like to summarize your own video, please enter 3: ")
     
     #Handle incorrect inputs
-    while selection not in ['0',' 1', '2', '3']:
+    while selection not in ['0', '1', '2', '3']:
         selection = input("Please enter a valid number corresponding to the video you would like to analyze: [0] Bit shifts, [1] LANs and WANs, [2] Programming Languages.\n" \
-                            "If you would like to summarize you own video, please enter 3: ")
+                            "If you would like to summarize your own video, please enter 3: ")
     
     #Covert input to integer
     selection = int(selection)
 
     #Select the video from file explorer
     if selection == 3:
-        print('Select the video you would like to summarize: ')
-        Tk().withdraw()
-        video = filedialog.askopenfilename()
+
+        #Retrieve input URL or empty line
+        URL = input("Enter the URL of the Youtube video you would like to summarize. " 
+                    "If you have the video downloaded and would like to choose from you file explorer instead, just hit enter: ")
+        
+        #Repeatedly ask for user input until a valid video is given
+        while True:
+
+            #If empty line, have user selected downlaoded video from file explorer
+            if URL == "":
+                print('Select the video you would like to summarize: ')
+                Tk().withdraw()
+                video = filedialog.askopenfilename()
+                
+                #Exit program if the user hits cancel when selecting a video from file explorer
+                if video == "":
+                    print("No video selected. Exiting Program.")
+                    sys.exit()
+                    
+                break
+
+            #Ensure link is from the offical Youtube domain
+            elif r"https://www.youtube.com" in URL or r"https://youtu.be/" in URL:
+
+                with YoutubeDL() as ydl:
+
+                    #Extract the youtube video download path
+                    info = ydl.extract_info(URL, download=False)
+
+                    #Extract the title and change to mp3 format
+                    title = Path(ydl.prepare_filename(info)).with_suffix('.mp3')
+                    video = os.path.join(file_path, os.path.basename(title))
+
+                    #Specify audio extraction and video format
+                    ydl_opts = {'extract_audio': True, 
+                                'format': 'bestaudio',
+                                'outtmpl': video}  
+
+                    URL = [URL]
+                    
+                    print("Downloading Youtube Video...")
+                    with YoutubeDL(ydl_opts) as ydl2:
+                        ydl2.download(URL)
+
+                break
+
+            URL = input("Enter the URL of the Youtube video you would like to summarize. " 
+                "If you have the video downloaded and would like to choose from you file explorer instead, just hit enter: ")
+        
     else:
+        
         video = vids[selection]
 
     model = VideoSummarizer(video, selection)
