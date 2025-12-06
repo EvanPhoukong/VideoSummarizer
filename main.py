@@ -332,7 +332,7 @@ def main() -> None:
 
         #Retrieve input URL or empty line
         URL = input("Enter the URL of the Youtube video you would like to summarize. " 
-                    "If you have the video downloaded and would like to choose from you file explorer instead, just hit enter: ")
+                    "If you have the video downloaded and would like to choose from your file explorer instead, just hit enter: ")
         
         #Repeatedly ask for user input until a valid video is given
         while True:
@@ -376,10 +376,10 @@ def main() -> None:
                 break
 
             URL = input("Enter the URL of the Youtube video you would like to summarize. " 
-                "If you have the video downloaded and would like to choose from you file explorer instead, just hit enter: ")
+                "If you have the video downloaded and would like to choose from your file explorer instead, just hit enter: ")
         
     else:
-        
+
         video = vids[selection]
 
     model = VideoSummarizer(video, selection)
