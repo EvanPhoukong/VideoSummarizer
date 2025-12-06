@@ -17,16 +17,6 @@ from pathlib import Path
 
 warnings.filterwarnings("ignore")
 
-def configure_API_key_instr() -> None:
-    """
-    Output instructions on how to configure OpenAI API Key
-    """
-    print('\nNOTE: Add your OpenAI API Key to the system environment variables.')
-    print('Generate a key here: https://platform.openai.com/api-keys')
-    print('Directions to add API Key to System Environment: https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety')
-    print('A credit balance above $0 is REQUIRED. This model uses very little tokens (Average < $0.005 per run when summarizing one of the 3 preconfigured videos).')
-    print('To view the price of GPT 5 Nano (the model being used), refer to this link: https://openai.com/api/pricing/\n')
-
 #Specify paths for transcript and generated summary files
 file_path = os.path.dirname(os.path.realpath(__file__))
 transcript_file = os.path.join(file_path, 'transcript.txt')
@@ -310,10 +300,10 @@ class VideoSummarizer:
         print(f'SummaC Score: {score1 * 100: .2f}%')
 
 
-def main() -> None:
-
-    #Warning: API Key Required
-    configure_API_key_instr()
+def retrieve_video() -> None:
+    """
+    Retrieve the video from user input, which can be a youtube URL, a downloaded video, or a preconfigured video
+    """
 
     #Select what video you would like to summarize
     selection = input("Please enter the number of the video you would like to analyze: [0] Bit shifts, [1] LANs and WANs, [2] Programming Languages.\n" \
@@ -381,6 +371,28 @@ def main() -> None:
     else:
 
         video = vids[selection]
+
+    return video, selection
+
+
+def configure_API_key_instr() -> None:
+    """
+    Output instructions on how to configure OpenAI API Key
+    """
+    print('\nNOTE: Add your OpenAI API Key to the system environment variables.')
+    print('Generate a key here: https://platform.openai.com/api-keys')
+    print('Directions to add API Key to System Environment: https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety')
+    print('A credit balance above $0 is REQUIRED. This model uses very little tokens (Average < $0.005 per run when summarizing one of the 3 preconfigured videos).')
+    print('To view the price of GPT 5 Nano (the model being used), refer to this link: https://openai.com/api/pricing/\n')
+
+
+def main() -> None:
+
+    #Warning: API Key Required
+    configure_API_key_instr()
+
+    #Retrieve the video from input
+    video, selection = retrieve_video()
 
     model = VideoSummarizer(video, selection)
     model.run()
